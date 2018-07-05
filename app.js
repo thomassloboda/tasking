@@ -15,87 +15,63 @@ function Database() {
     configuration.db.size
   );
 
-  var createTable = function(successCallback, errCallback) {
+  function execute(query, params, onSuccess, onError) {
     db.transaction(function(transaction) {
       transaction.executeSql(
-        "CREATE TABLE IF NOT EXISTS tasks (" +
-          "id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT," +
-          "text TEXT NOT NULL, state INTEGER NOT NULL);",
-        null,
+        query,
+        params,
         function(transaction, results) {
-          successCallback(results);
+          if (onSuccess) {
+            onSuccess(results);
+          }
         },
-        errCallback
+        onError
       );
     });
+  }
+
+  var createTable = function(onSuccess, onError) {
+    execute(
+      "CREATE TABLE IF NOT EXISTS tasks (" +
+        "id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT," +
+        "text TEXT NOT NULL, state INTEGER NOT NULL);",
+      null,
+      onSuccess,
+      onError
+    );
   };
 
-  var dropTable = function(successCallback, errCallback) {
-    db.transaction(function(transaction) {
-      transaction.executeSql(
-        "DROP TABLE tasks;",
-        null,
-        function(transaction, results) {
-          successCallback(results);
-        },
-        errCallback
-      );
-    });
+  var dropTable = function(onSuccess, onError) {
+    execute("DROP TABLE tasks;", null, onSuccess, onError);
   };
 
-  var createTask = function(text, state, successCallback, errCallback) {
-    db.transaction(function(transaction) {
-      transaction.executeSql(
-        "INSERT INTO tasks (text, state) VALUES (?, ?);",
-        [text, state],
-        function(transaction, results) {
-          successCallback(results);
-        },
-        errCallback
-      );
-    });
+  var createTask = function(text, state, onSuccess, onError) {
+    execute(
+      "INSERT INTO tasks (text, state) VALUES (?, ?);",
+      [text, state],
+      onSuccess,
+      onError
+    );
   };
 
-  var updateTask = function(id, text, state, successCallback, errCallback) {
-    db.transaction(function(transaction) {
-      transaction.executeSql(
-        "UPDATE tasks set text = ? , state = ? WHERE id = ?;",
-        [text, state, id],
-        function(transaction, results) {
-          successCallback(results);
-        },
-        errCallback
-      );
-    });
+  var updateTask = function(id, text, state, onSuccess, onError) {
+    execute(
+      "UPDATE tasks set text = ? , state = ? WHERE id = ?;",
+      [text, state, id],
+      onSuccess,
+      onError
+    );
   };
 
-  var loadTasks = function(successCallback, errCallback) {
-    db.transaction(function(transaction) {
-      transaction.executeSql(
-        "SELECT * FROM tasks;",
-        null,
-        function(transaction, results) {
-          successCallback(results);
-        },
-        errCallback
-      );
-    });
+  var loadTasks = function(onSuccess, onError) {
+    execute("SELECT * FROM tasks;", null, onSuccess, onError);
   };
 
-  var deleteTask = function(id, successCallback, errCallback) {
-    db.transaction(function(transaction) {
-      transaction.executeSql(
-        "DELETE FROM tasks WHERE id = ?;",
-        [id],
-        function(transaction, results) {
-          successCallback(results);
-        },
-        errCallback
-      );
-    });
+  var deleteTask = function(id, onSuccess, onError) {
+    execute("DELETE FROM tasks WHERE id = ?;", [id], onSuccess, onError);
   };
 
-  createTable(function() {});
+  createTable();
 
   return {
     loadTasks: loadTasks,
@@ -121,15 +97,17 @@ function stateToEmojis(state) {
   }
 }
 
-document.querySelector("#newtask").close();
+var newTaskCancel = document.querySelector("#newtask_cancel");
+var newTaskConfirm = document.querySelector("#newtask_confirm");
+var newTaskDialog = document.querySelector("#newtask");
+var newtaskValue = document.querySelector("#newtask_text");
 
 document.addEventListener("keyup", function(evt) {
-  var dialog = document.querySelector("#newtask");
-  if (!dialog.open) {
+  if (!newTaskDialog.open) {
     if (evt.keyCode === 73) {
       importFile();
     } else if (evt.keyCode === 78) {
-      dialog.showModal();
+      newTaskDialog.showModal();
     } else if (evt.keyCode === 88) {
       download(new Date().getTime() + ".json", JSON.stringify(tasks));
     }
@@ -202,32 +180,30 @@ function importFile() {
   element.click();
 }
 
-document.querySelector("#newtask_cancel").addEventListener("click", function() {
-  document.querySelector("#newtask").close();
-  document.querySelector("#newtask_text").value = "";
+newTaskCancel.addEventListener("click", function() {
+  newTaskDialog.close();
+  newtaskValue.value = "";
 });
-document
-  .querySelector("#newtask_confirm")
-  .addEventListener("click", function() {
+
+newTaskConfirm.addEventListener("click", function() {
+  createTask();
+});
+
+newtaskValue.addEventListener("keyup", function(evt) {
+  if (evt.keyCode === 13 && newTaskDialog.open) {
     createTask();
-  });
-document
-  .querySelector("#newtask_text")
-  .addEventListener("keyup", function(evt) {
-    if (evt.keyCode === 13 && document.querySelector("#newtask").open) {
-      createTask();
-    }
-  });
+  }
+});
 
 function createTask() {
-  var value = document.querySelector("#newtask_text").value;
+  var value = newtaskValue.value;
   if (value.trim() !== "") {
     database.createTask(
       value,
       0,
       function(result) {
-        document.querySelector("#newtask").close();
-        document.querySelector("#newtask_text").value = "";
+        newTaskDialog.close();
+        newtaskValue.value = "";
         init();
       },
       function(error) {
