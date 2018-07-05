@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>📝 tasking</title>
+    <link rel="stylesheet" href="./style.css">
+    <link rel="shortcut icon" href="about:blank">
+</head>
+
+<body>
+    <div id="tasks">
+        <h1>📝 tasking</h1>
+    </div>
+    <dialog id="newtask">
+        <div>
+            <span>New task</span>
+            <input type="text" id="newtask_text" />
+            <div id="newtask_buttons">
+                <button id="newtask_cancel">cancel</button>
+                <button id="newtask_confirm">confirm</button>
+            </div>
+        </div>
+    </dialog>
+    <footer>
+        <small>to create a new task, type `n`.
+            <br/> to copy a task content, double click.
+            <br/>to export task list, type `x`.
+            <br/>to import task list, type `i`.
+        </small>
+    </footer>
+    <script src="./app.js"></script>
+</body>
+
+</html>
